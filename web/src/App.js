@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
+import api from './services/api';
 
 import './global.css';
 import './App.css';
 import './Sidebar.css';
 import './Main.css';
 
+import DevItem from './components/DevItem';
+
 function App() {
+  const[devs, setDevs] = useState([]);
+
+  const [github_username, setGithub_username] = useState('');  
+  const [techs, setTechs] = useState('');
 
   const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [longitude, setLongitude] = useState('');  
   
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -18,7 +25,7 @@ function App() {
         setLongitude(longitude);        
       },
       (err)=>{
-        console.log("error");
+        console.log(err);
       },
       {
         timeout:30000,
@@ -26,19 +33,56 @@ function App() {
     );
   }, []);
 
+  useEffect(() => {
+    async function loadDevs(){
+        const res = await api.get('/devs');
+
+      setDevs(res.data);
+    }
+
+    loadDevs();
+  },[]);
+
+  async function handleAddDev(e){
+    e.preventDefault();
+     
+    const res = await api.post('/devs',{
+      github_username,
+      techs,
+      latitude,
+      longitude,
+    })
+
+    setGithub_username('');
+    setTechs('');
+    
+    setDevs([...devs, res.data]);
+  }
+
+  
   return ( 
     <div id="app" >
       <aside>
         <strong>Cadastrar</strong>
-        <form>
+        <form onSubmit={handleAddDev}>
           <div className="input-block">
               <label htmlFor="github_username">Usuario do Github</label>
-              <input name="github_username" id="github_username" required/>
+              <input 
+              name="github_username" 
+              id="github_username" 
+              value={github_username} 
+              onChange={e=> setGithub_username(e.target.value)} 
+               required/>
           </div> 
 
           <div className="input-block">
-            <label htmlFor="techs" >Tecnologias</label>
-            <input name="techs" id="techs" required/>        
+            <label htmlFor="techs">Tecnologias</label>
+            <input 
+            name="techs" 
+            id="techs" 
+            value={techs} 
+            onChange={e=> setTechs(e.target.value)} 
+            required/>        
           </div> 
 
           <div className="input-group">
@@ -57,7 +101,7 @@ function App() {
               <label htmlFor="longitude" >Longitude</label>
               <input type="number" name="longitude" id="longitude" value={longitude} onChange={e=> setLongitude(e.target.value)} required/>
             </div> 
-          </div>
+          </div> 
           
           <button type="submit">Salvar</button>
 
@@ -65,50 +109,9 @@ function App() {
       </aside>
       <main>
           <ul>
-            <li className="dev-item">
-               <header>
-                 <img src="https://avatars1.githubusercontent.com/u/6765854?s=400&u=9017a74b338733661f761b4147419da59dc5b610&v=4" alt="" />
-                 <div className="user-info">
-                   <strong>Vinicius Vasoncelos</strong>
-                   <span>ReactJS, NodeJS</span>                   
-                 </div>                 
-               </header>
-               <p>Roboto has a dual nature. It has a mechanical skeleton and the forms are largely geometric.</p>
-               <a href="https://github.com/vinilitaiff">Acessar perfil no Github</a>
-            </li>   
-            <li className="dev-item">
-               <header>
-                 <img src="https://avatars1.githubusercontent.com/u/6765854?s=400&u=9017a74b338733661f761b4147419da59dc5b610&v=4" alt="" />
-                 <div className="user-info">
-                   <strong>Vinicius Vasoncelos</strong>
-                   <span>ReactJS, NodeJS</span>                   
-                 </div>                 
-               </header>
-               <p>Roboto has a dual nature. It has a mechanical skeleton and the forms are largely geometric.</p>
-               <a href="https://github.com/vinilitaiff">Acessar perfil no Github</a>
-            </li> 
-            <li className="dev-item">
-               <header>
-                 <img src="https://avatars1.githubusercontent.com/u/6765854?s=400&u=9017a74b338733661f761b4147419da59dc5b610&v=4" alt="" />
-                 <div className="user-info">
-                   <strong>Vinicius Vasoncelos</strong>
-                   <span>ReactJS, NodeJS</span>                   
-                 </div>                 
-               </header>
-               <p>Roboto has a dual nature. It has a mechanical skeleton and the forms are largely geometric.</p>
-               <a href="https://github.com/vinilitaiff">Acessar perfil no Github</a>
-            </li> 
-             <li className="dev-item">
-               <header>
-                 <img src="https://avatars1.githubusercontent.com/u/6765854?s=400&u=9017a74b338733661f761b4147419da59dc5b610&v=4" alt="" />
-                 <div className="user-info">
-                   <strong>Vinicius Vasoncelos</strong>
-                   <span>ReactJS, NodeJS</span>                   
-                 </div>                 
-               </header>
-               <p>Roboto has a dual nature. It has a mechanical skeleton and the forms are largely geometric.</p>
-               <a href="https://github.com/vinilitaiff">Acessar perfil no Github</a>
-            </li>          
+            {devs.map(dev => (            
+              <DevItem key={dev._id} dev={dev} />  
+            ))}
           </ul>
       </main>
     </div>
